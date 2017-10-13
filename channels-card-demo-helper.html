@@ -9,27 +9,36 @@
       }
 
       #composerContainer {
+        margin: 10px 0;
         background-color: white;
         border: 1px solid #aaa;
+        padding: 4px;
       }
 
       #composerArea {
         position: relative;
       }
 
-      #viewerContainer {
+      #viewerArea {
         margin-top: 50px;
+      }
+
+      #viewerContainer {
+        margin: 10px 0;
+        border: 1px solid #aaa;
+        background-color: white;
+        padding: 4px;
       }
     </style>
     <div class="container">
       <div id="composerArea">
-        <div>Composer</div>
+        <h3>Composer</h3>
         <div style="position: relative;">
           <div id="composerContainer"></div>
         </div>
       </div>
       <div id="viewerArea">
-        <div>Viewer</div>
+        <h3>Viewer</h3>
         <div id="viewerContainer"></div>
       </div>
     </div>
@@ -58,10 +67,10 @@
           handle: "jdoe",
           name: "John Doe"
         };
-        this.composer.addEventHandler('ready-changed', () => {
+        this.composer.addEventListener('ready-changed', () => {
           this._initializeViewer();
         });
-        this.composer.addEventHandler('shared-state-changed', () => {
+        this.composer.addEventListener('shared-state-changed', () => {
           this._initializeViewer();
         });
         this.$.composerContainer.appendChild(this.composer);
@@ -72,8 +81,9 @@
           this.$.viewerContainer.removeChild(this.$.viewerContainer.firstChild);
         }
         if (this.composer.ready) {
+          this.$.viewerArea.style.display = "";
           this.viewer = document.createElement(this.viewerTagName);
-          this.viewer.sharedState = JSON.parse(JSON.stringify(this.composer.sharedState));
+          this.viewer.sharedState = JSON.parse(JSON.stringify(this.composer.getSharedState() || { properties: {}, collections: {} }));
           this.viewer.author = {
             handle: "jdoe",
             name: "John Doe"
@@ -82,7 +92,9 @@
             handle: "jane",
             name: "Jane Doe"
           };
-          this.viewerContainer.appendChild(this.viewer);
+          this.$.viewerContainer.appendChild(this.viewer);
+        } else {
+          this.$.viewerArea.style.display = "none";
         }
       }
     }
