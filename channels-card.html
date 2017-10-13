@@ -1,0 +1,71 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../distributed-state-controller/distributed-state-controller.html">
+
+<dom-module id="channels-card-composer">
+  <template>
+    <div></div>
+  </template>
+  <script>
+    class ChannelsCardComposer extends Polymer.Element {
+      static get is() { return 'channels-card-composer'; }
+      static get properties() {
+        return {
+          channel: Object
+        };
+      }
+      send(data) {
+        this.channel.sendCard(this, { json: data }, true, false);
+      }
+    }
+  </script>
+</dom-module>
+
+<dom-module id="channels-card-viewer">
+  <template>
+    <div></div>
+  </template>
+  <script>
+    class ChannelsCardViewer extends Polymer.Element {
+      static get is() { return 'channels-card-viewer'; }
+      static get properties() {
+        return {
+          data: Object,
+          channel: Object
+        };
+      }
+      constructor() {
+        super();
+        this.stateController = new DistributedStateController();
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        this.stateController.initialize(this, this.data);
+      }
+      handleCardToCardMessageReceived(participant, cardExchangeMessage, channelMessage) {
+        switch (cardExchangeMessage.json.details.data.type) {
+          case 'mutation':
+            this.stateController.handleInboundMutation(cardExchangeMessage.json.details.data.details, channelMessage);
+            break;
+          default:
+            break;
+        }
+      }
+      sendMutation(mutation) {
+        return this.channel.sendCardToCardMessage(this, { json: { type: "mutation", details: mutation } }, true, false);
+      }
+      setProperty(path, value) {
+        this.set('data.' + path, value);
+      }
+      spliceArray(path, index, removeCount, record) {
+        this.splice("data." + path, index, removeCount, record);
+      }
+      updateRecord(path, recordId, index, updatedRecordValue, elementPath, elementValue) {
+        if (elementPath) {
+          this.set('data.' + path + '.' + index + '.' + elementPath, elementValue);
+        } else {
+          this.set('data.' + path + '.' + index, updatedRecordValue);
+        }
+      }
+    }
+  </script>
+</dom-module>

@@ -1,0 +1,230 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="channels-card-demo-helper">
+  <template>
+    <style>
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      #composerElement {
+        background-color: white;
+        border: 1px solid #aaa;
+      }
+
+      #composerArea {
+        position: relative;
+      }
+
+      #composerOverlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        opacity: 0.5;
+        background-color: #eee;
+      }
+
+      #viewerArea {
+        margin-top: 50px;
+      }
+    </style>
+    <div class="container">
+      <div id="composerArea">
+        <div>Composer</div>
+        <div style="position: relative;">
+          <div id="composerElement"></div>
+          <div id="composerOverlay"></div>
+        </div>
+      </div>
+      <div id="viewerArea">
+        <div>Viewers</div>
+        <template is="dom-repeat" items="[[viewers]]">
+          <channels-card-viewer-container channel="[[item.viewerChannel]]" viewer-tag-name="[[item.tagName]]" index="[[item.index]]"
+            data="[[item.data]]" message="[[cardToCardMessage]]"></channels-card-viewer-container>
+        </template>
+      </div>
+    </div>
+  </template>
+  <script>
+    class ComposerChannel {
+      constructor(controller, index) {
+        this.controller = controller;
+        this.index = index;
+        this.participants = [];
+        for (let i = 0; i < 3; i++) {
+          const participant = {
+            identity: i.toString(),
+            code: i,
+            details: {
+              name: 'user' + i
+            },
+            isCreator: i === 0,
+            memberSince: Date.now(),
+            lastActive: Date.now()
+          };
+        }
+      }
+
+      get me() {
+        return this.participants[0];
+      }
+
+      sendCard(sender, messageData, history, priority) {
+        this.controller.onCardSend(sender, messageData, history, priority);
+      }
+
+      sendCardToCardMessage(sender, messageData, history, priority) {
+        throw new Error("sendCardToCardMessage should never be called by the composer");
+      }
+    }
+    class ViewerChannel {
+      constructor(controller, index) {
+        this.controller = controller;
+        this.index = index;
+        this.participants = [];
+        for (let i = 0; i < 3; i++) {
+          const participant = {
+            identity: {
+              publicKey: 'public-key-' + i,
+              address: new Uint8Array([0, 0, 0, i])
+            },
+            details: {
+              name: 'user' + i
+            },
+            code: i + 1,
+            isMe: i === 0,
+            isCreator: i === 0,
+            memberSince: Date.now(),
+            lastActive: Date.now()
+          };
+          this.participants.push(participant);
+        }
+      }
+
+      get me() {
+        return this.participants[this.index];
+      }
+
+      sendCard(sender, messageData, history, priority) {
+        throw new Error("sendCardToCardMessage should never be called by the composer");
+      }
+
+      sendCardToCardMessage(sender, messageData, history, priority) {
+        return this.controller.sendCardToCardMessage(sender, messageData, history, priority, this.index);
+      }
+    }
+    class ChannelsCardDemoHelper extends Polymer.Element {
+      static get is() { return 'channels-card-demo-helper'; }
+      static get properties() {
+        return {
+          composerTagName: String,
+          viewerTagName: String,
+          viewers: {
+            type: Array,
+            value: function () { return []; }
+          },
+          cardToCardMessage: Object,
+          viewerChannel: Object
+        };
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        var e = document.createElement(this.composerTagName);
+        e.cardId = 'card1';
+        e.packageSource = 'demo';
+        e.mode = "compose";
+        e.channel = new ComposerChannel(this);
+        this.$.composerElement.appendChild(e);
+        this.$.viewerArea.style.display = 'none';
+        this.$.composerOverlay.style.display = 'none';
+      }
+      onCardSend(sender, messageData, history, priority) {
+        const viewers = [];
+        for (let i = 0; i < 3; i++) {
+          const viewer = {
+            tagName: this.viewerTagName,
+            data: JSON.parse(JSON.stringify(messageData)),
+            index: i,
+            viewerChannel: new ViewerChannel(this, i)
+          };
+          viewers.push(viewer);
+        }
+        this.set('viewers', viewers);
+        // this.$.composerArea.style.display = 'none';
+        this.$.composerOverlay.style.display = '';
+        this.$.viewerArea.style.display = '';
+      }
+      sendCardToCardMessage(sender, messageData, history, priority, index) {
+        const newMessage = {
+          fromIndex: index,
+          sender: sender,
+          messageData: JSON.parse(JSON.stringify(messageData)),
+          history: history,
+          priority: priority,
+          senderCode: index,
+          timestamp: Date.now()
+        };
+        this.set('cardToCardMessage', newMessage);
+        return { timestamp: newMessage.timestamp, senderCode: index };
+      }
+    }
+    window.customElements.define(ChannelsCardDemoHelper.is, ChannelsCardDemoHelper);
+  </script>
+</dom-module>
+
+<dom-module id="channels-card-viewer-container">
+  <template>
+    <style>
+      .container {
+        background-color: white;
+        margin: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+      }
+
+      .user {
+        margin: 25px 0 0 10px;
+      }
+    </style>
+    <div class="user">user[[index]]</div>
+    <div class="container">
+      <div id="element"></div>
+    </div>
+  </template>
+  <script>
+    class ChannelsCardViewerContainer extends Polymer.Element {
+      static get is() { return 'channels-card-viewer-container'; }
+      static get properties() {
+        return {
+          index: Number,
+          viewerTagName: String,
+          data: Object,
+          message: {
+            type: Object,
+            observer: 'onCardToCardMessage'
+          },
+          channel: Object
+        };
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        this.viewer = document.createElement(this.viewerTagName);
+        this.viewer.cardId = 'card1';
+        this.viewer.packageSource = 'demo';
+        this.viewer.mode = "view";
+        this.viewer.channel = this.channel;
+        this.viewer.data = this.data.json;
+        this.$.element.appendChild(this.viewer);
+      }
+      onCardToCardMessage(message, lastMessage) {
+        if (message.fromIndex !== this.index) {
+          this.viewer.handleCardToCardMessageReceived(message.sender, { json: { details: { data: message.messageData.json } } }, { senderCode: message.senderCode, timestamp: message.timestamp });
+        }
+      }
+    }
+    window.customElements.define(ChannelsCardViewerContainer.is, ChannelsCardViewerContainer);
+  </script>
+</dom-module>

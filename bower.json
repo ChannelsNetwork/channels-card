@@ -1,0 +1,21 @@
+{
+  "name": "channels-card",
+  "homepage": "https://github.com/ChannelsNetwork/channels-card",
+  "authors": [
+    "Kingston Duffie <kduffie@hivepoint.com>"
+  ],
+  "description": "Web components to support Channels card development",
+  "main": "channels-card.html",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "^2.0.1",
+    "distributed-state-controller": "^0.1.1"
+  }
+}
