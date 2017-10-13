@@ -4,8 +4,8 @@
   "authors": [
     "Kingston Duffie <kduffie@hivepoint.com>"
   ],
-  "description": "Web components to support Channels card development",
-  "main": "channels-card.html",
+  "description": "Helper for Channels card development",
+  "main": "channels-card-demo-helper.html",
   "license": "MIT",
   "ignore": [
     "**/.*",
@@ -15,7 +15,6 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "^2.0.1",
-    "distributed-state-controller": "^0.1.1"
+    "polymer": "^2.0.1"
   }
 }
