@@ -26,29 +26,6 @@
         position: relative;
         height: 600px;
       }
-
-      button {
-        outline: none;
-        letter-spacing: 0.03em;
-        text-decoration: none;
-        text-transform: uppercase;
-        border: none;
-        font-size: 17px;
-        padding: 10px;
-        border-radius: 3px;
-        cursor: pointer;
-        background: rgb(76, 175, 80);
-        color: white;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        -webkit-user-select: none;
-        user-select: none;
-      }
-
-      button:disabled {
-        background-color: #aaa;
-        border: 1px solid white;
-      }
     </style>
     <div class="container">
       <div id="composerArea">
@@ -56,9 +33,6 @@
         <div style="position: relative;">
           <div id="composerContainer"></div>
         </div>
-      </div>
-      <div style="text-align:center;">
-        <button id="publish" on-click="_onPublish" disabled>Publish</button>
       </div>
       <div id="viewerArea">
         <div>Viewer</div>
@@ -70,13 +44,7 @@
     class ChannelsComposerServices {
       upload(file) {
         return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            if (typeof file === 'string') {
-              resolve({ id: null, url: file });
-            } else {
-              resolve({ id: null, url: URL.createObjectURL(file) });
-            }
-          }, 2000);
+          resolve("about:blank");
         });
       }
     }
@@ -97,9 +65,27 @@
           name: "John Doe"
         };
         this.composer.addEventListener('state-ready-change', () => {
-          this.$.publish.disabled = !this.composer.isReady;
+          this._prepare();
+        });
+        this.composer.addEventListener('shared-state-change', () => {
+          this._prepare();
         });
         this.$.composerContainer.appendChild(this.composer);
+        this._prepare();
+      }
+      _prepare() {
+        if (!this.composer.ready) {
+          return;
+        }
+        if (this.composer.prepare) {
+          this.composer.prepare().then(() => {
+            this._initializeViewer();
+          }).catch((err) => {
+            console.log(err);
+          });
+        } else {
+          this._initializeViewer();
+        }
       }
       _initializeViewer() {
         while (this.$.viewerContainer.firstChild) {
@@ -117,17 +103,6 @@
             name: "Jane Doe"
           };
           this.$.viewerContainer.appendChild(this.viewer);
-        }
-      }
-
-      _onPublish() {
-        this.$.publish.disabled = true;
-        if (this.composer.prepare) {
-          this.composer.prepare().then(() => {
-            this._initializeViewer();
-          });
-        } else {
-          this._initializeViewer();
         }
       }
     }
