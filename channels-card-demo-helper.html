@@ -47,6 +47,11 @@
           resolve("about:blank");
         });
       }
+      queryPage(url) {
+        return Promise.resolve({
+          embeddable: true
+        });
+      }
     }
     class ChannelsCardDemoHelper extends Polymer.Element {
       static get is() { return 'channels-card-demo-helper'; }
